@@ -1,0 +1,19 @@
+CREATE TABLE products (
+    id UUID PRIMARY KEY,
+    sku VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE inventory_items (
+    id UUID PRIMARY KEY,
+    product_id UUID NOT NULL REFERENCES products(id),
+    warehouse_id UUID NOT NULL,
+    quantity_available INTEGER NOT NULL DEFAULT 0,
+    quantity_reserved INTEGER NOT NULL DEFAULT 0,
+    last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0
+);
