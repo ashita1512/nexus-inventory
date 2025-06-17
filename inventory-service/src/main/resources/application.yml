@@ -5,11 +5,15 @@ spring:
   application:
     name: inventory-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/inventory_service_db  # <-- DB name from compose
-    username: nexususer                                       # <-- User from compose
-    password: nexuspw                                         # <-- Password from compose
+    url: jdbc:postgresql://localhost:5432/inventory_service_db # <-- THE FINAL FIX
+    username: nexususer
+    password: nexuspw
     driver-class-name: org.postgresql.Driver
   jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
     hibernate:
       ddl-auto: validate
     show-sql: true
