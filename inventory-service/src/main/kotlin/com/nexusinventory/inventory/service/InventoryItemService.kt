@@ -5,17 +5,19 @@ import com.nexusinventory.inventory.dto.UpdateStockRequest
 import com.nexusinventory.inventory.model.InventoryItem
 import com.nexusinventory.inventory.repository.InventoryItemRepository
 import com.nexusinventory.inventory.repository.ProductRepository
+import com.nexusinventory.shared.events.InventoryUpdatedEvent
 import org.springframework.stereotype.Service
 import java.util.*
 
 @Service
 class InventoryItemService(
     private val inventoryItemRepository: InventoryItemRepository,
-    private val productRepository: ProductRepository // Inject ProductRepository to verify products exist
+    private val productRepository: ProductRepository,
+    private val kafkaProducerService: KafkaProducerService
 ) {
 
+    // Restoring the logic for this method
     fun addInventory(request: AddInventoryRequest): InventoryItem {
-        // First, check if the product exists before adding inventory for it
         if (!productRepository.existsById(request.productId)) {
             throw NoSuchElementException("Product with ID ${request.productId} not found.")
         }
@@ -24,11 +26,12 @@ class InventoryItemService(
             productId = request.productId,
             warehouseId = request.warehouseId,
             quantityAvailable = request.quantity,
-            quantityReserved = 0 // Initially, no stock is reserved
+            quantityReserved = 0
         )
         return inventoryItemRepository.save(newInventoryItem)
     }
 
+    // Restoring the logic for this method
     fun getInventoryForProduct(productId: UUID): List<InventoryItem> {
         return inventoryItemRepository.findByProductId(productId)
     }
@@ -39,6 +42,16 @@ class InventoryItemService(
 
         inventoryItem.quantityAvailable = request.newQuantity
 
-        return inventoryItemRepository.save(inventoryItem)
+        val savedItem = inventoryItemRepository.save(inventoryItem)
+
+        val event = InventoryUpdatedEvent(
+            inventoryItemId = savedItem.id!!,
+            productId = savedItem.productId,
+            warehouseId = savedItem.warehouseId, // <-- THE MISSING PARAMETER IS NOW ADDED
+            newQuantityAvailable = savedItem.quantityAvailable
+        )
+        kafkaProducerService.sendInventoryUpdateEvent(event)
+
+        return savedItem
     }
 }
